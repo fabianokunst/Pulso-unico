@@ -481,9 +481,10 @@ export function buildCharacter(kind = 'caio') {
 
   // ---------- acessórios
   const dark = new THREE.MeshLambertMaterial({ color: 0x18181a });
+  let phones = null;
   if (L.headphones) {
     // fone grande de PC pendurado no pescoço
-    rigid('chest', (R) => {
+    phones = rigid('chest', (R) => {
       const pts = []; for (let i = 0; i <= 10; i++) { const a = Math.PI * (1 + i / 10); pts.push([Math.cos(a) * 0.09, 1.478 - Math.sin(a) * 0.01, Math.sin(a) * 0.08 + 0.012]); }
       R.ribbon('m', pts, pts.map(() => 0.024), [0, 1.3, 0.02], [['root', 1]]);
       for (const s of [1, -1]) R.loft('m', [
@@ -513,7 +514,17 @@ export function buildCharacter(kind = 'caio') {
   const root = new THREE.Group();
   root.add(mesh);
   root.scale.setScalar(L.h);
-  return { root, mesh, bones, kind };
+  // dormindo: olhos fechados e sem o fone no pescoço
+  const openMap = face.map;
+  let closedMap = null, asleep = false;
+  const setAsleep = (on) => {
+    if (on === asleep) return;
+    asleep = on;
+    if (on && !closedMap) closedMap = faceTexture({ ...L, closed: true });
+    face.map = on ? closedMap : openMap;
+    if (phones) phones.visible = !on;
+  };
+  return { root, mesh, bones, kind, setAsleep };
 }
 
 // aplica um dicionário de pose (ângulos em radianos) aos ossos

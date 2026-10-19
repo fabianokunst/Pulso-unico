@@ -140,6 +140,7 @@ export class Story {
     p.snap();
     const prevLook = p.kind;
     if (shirt) p.setLook('leo'); else p.setLook('caio');
+    w.syncBed(p);
     const chairRot = w.chair.rotation.y; w.setChairTurned(false);
     const figPos = w.figure.position.clone(), figRot = w.figure.rotation.y;
     if (figure) { w.figure.position.set(figure[0], 0, figure[1]); w.figure.rotation.y = figure[2]; w.figure.visible = true; }
@@ -156,6 +157,7 @@ export class Story {
     // restaura
     p.state = saved.state; p.root.position.copy(saved.pos); p.root.rotation.copy(saved.rot); p.body.rotation.copy(saved.body);
     p.heading = saved.heading; p.typing = saved.typing; p.snap();
+    w.syncBed(p);
     // carimbo laranja de câmera digital
     const g = c.getContext('2d');
     g.font = 'bold 13px "Courier New", monospace'; g.textAlign = 'right'; g.fillStyle = '#ff8a1a';

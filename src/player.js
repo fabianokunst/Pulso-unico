@@ -63,11 +63,15 @@ export class Player {
     this.root.position.set(chair.x, 0, chair.z + 0.05); this.root.rotation.set(0, Math.PI, 0);
     this.body.rotation.set(0, 0, 0); this.body.position.set(0, 0, 0);
   }
-  lie(x = -1.53, z = 0.98) {
+  // deitado de lado sobre o ombro esquerdo, virado para o quarto, cabeça no travesseiro
+  // (o cobertor que cobre o corpo é moldado pelo World.syncBed)
+  lie(x = -1.64, z = 0.9) {
     this.state = 'bed'; this.speed = 0; this.auto = null; this.autoTurn = null;
     this.heading = 0;
-    this.root.position.set(x, 0.56, z); this.root.rotation.set(0, 0, 0);
-    this.body.rotation.set(-Math.PI / 2, 0, 0);
+    this.root.position.set(x, 0.65, z); this.root.rotation.set(0, 0, 0);
+    // eixos do corpo: lado esquerdo → baixo, cabeça → -z (cabeceira), frente → +x (quarto)
+    this.body.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(
+      new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, -1), new THREE.Vector3(1, 0, 0)));
   }
   snap() { this.computeTargets(0); for (const j of JOINTS) this.pose[j] = this.target[j]; this.applyPose(); }
 
@@ -242,8 +246,14 @@ export class Player {
       }
       t.ftL = -(t.hipLx + t.knL); t.ftR = -(t.hipRx + t.knR);
     } else if (this.state === 'bed') {
-      t.headX = -0.22; t.headY = Math.sin(now * 0.1) * 0.15 + 0.2; t.shLz = 0.1; t.shRz = -0.1; t.elL = t.elR = -0.25;
-      t.breath *= 2; t.hipLz = 0.04; t.hipRz = -0.04; t.knL = 0.08; t.ftL = 0.5; t.ftR = 0.5;
+      // encolhido de lado: costas um pouco curvas, perna de baixo meio dobrada, a de cima mais à frente
+      t.torsoX = 0.3; t.headX = 0.14; t.headZ = 0.05;
+      t.hipLx = -0.7; t.knL = 1.05; t.hipRx = -1.15; t.knR = 1.4; t.hipRz = 0.3;
+      t.ftL = 0.45; t.ftR = 0.5;
+      // braço de baixo dobrado com a mão perto do rosto; o de cima apoiado ao longo do corpo
+      t.shLx = -1.3; t.shLz = -0.2; t.elL = -1.95; t.wrL = 0.25;
+      t.shRx = -0.35; t.shRz = 0.25; t.elR = -0.5;
+      t.breath *= 1.6;
     }
     // olhar para um ponto (cabeça + um pouco do tronco)
     if (lookAt && this.state !== 'bed') {
@@ -259,5 +269,5 @@ export class Player {
     }
   }
 
-  applyPose() { applyPose(this.ch.bones, this.pose); }
+  applyPose() { applyPose(this.ch.bones, this.pose); this.ch.setAsleep(this.state === 'bed'); }
 }

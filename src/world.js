@@ -392,20 +392,180 @@ export class World {
     }
     bg.computeVertexNormals();
     const uv = bg.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 2, uv.getY(i) * 2.5);
-    this.blanketMat = lam({ map: T.cobertor });
-    const bl = new THREE.Mesh(bg, this.blanketMat); bl.position.set(-1.53, 0.4, 0.38); this.add(bl, bed);
+    this.blanketMat = lam({ map: T.cobertor, side: THREE.DoubleSide });
+    const bl = this.blanket = new THREE.Mesh(bg, this.blanketMat); bl.position.set(-1.53, 0.4, 0.38); this.add(bl, bed);
+    this.sheetMat = lam({ map: T.lencol, color: 0xe8e4dc, side: THREE.DoubleSide });
     // travesseiro
     const pg = new THREE.BoxGeometry(0.6, 0.12, 0.34, 6, 2, 4);
     const pp = pg.attributes.position;
     for (let i = 0; i < pp.count; i++) { const x = pp.getX(i) / 0.3, z = pp.getZ(i) / 0.17; pp.setY(i, pp.getY(i) * (1 - 0.6 * x * x) * (1 - 0.5 * z * z)); }
     pg.computeVertexNormals();
     const pil = new THREE.Mesh(pg, lam({ map: T.lencol, color: 0xe8e4dc })); pil.position.set(-1.53, 0.5, -0.68); pil.rotation.y = 0.06; this.add(pil, bed);
-    // roupas jogadas
+    // roupas jogadas em cima da cama (quando ele deita, vão para o chão ao lado): [x, y, z, giro]
     this.clothes = new THREE.Group(); bed.add(this.clothes);
-    const c1 = this.box(0.4, 0.05, 0.3, lam({ color: 0x2c3e5c }), -1.4, 0.52, 0.9, this.clothes); c1.rotation.y = 0.4;
-    const c2 = this.box(0.35, 0.04, 0.3, lam({ color: 0x6a1a1a }), -1.65, 0.53, 0.7, this.clothes); c2.rotation.y = -0.3;
+    const jeans = this.cloth('calca', 0x34496a, 0.36, 0.46, 0.045, 7);
+    jeans.userData = { bed: [-1.36, 0.505, 0.8, 0.5], floor: [-0.86, 0.004, 0.86, 1.25] };
+    const shirt = this.cloth('camiseta', 0x7a2020, 0.44, 0.4, 0.04, 19);
+    shirt.userData = { bed: [-1.7, 0.505, 0.62, -0.35], floor: [-0.9, 0.004, 0.48, -0.6] };
+    for (const c of [jeans, shirt]) { const s = c.userData.bed; c.position.set(s[0], s[1], s[2]); c.rotation.y = s[3]; this.clothes.add(c); }
     // moletom do Léo (aparece no quarto dele)
     this.hoodie = new THREE.Group(); R.add(this.hoodie); this.hoodie.visible = false;
+  }
+
+  // roupa largada: recorte da peça (alpha) sobre uma grade amassada que encosta na superfície pelas bordas
+  cloth(kind, color, w, d, h, seed) {
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const g = c.getContext('2d');
+    let s = seed;
+    const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+    const col = new THREE.Color(color), css = (k) => `rgb(${col.r * 255 * k | 0},${col.g * 255 * k | 0},${col.b * 255 * k | 0})`;
+    g.fillStyle = css(1); g.beginPath();
+    if (kind === 'camiseta') {
+      // gola, mangas abertas, barra torta
+      g.moveTo(44, 12); g.quadraticCurveTo(64, 30, 86, 12); g.lineTo(122, 30); g.lineTo(112, 58); g.lineTo(94, 50);
+      g.lineTo(100, 118); g.quadraticCurveTo(62, 126, 26, 114); g.lineTo(34, 50); g.lineTo(16, 62); g.lineTo(5, 32);
+    } else {
+      // calça: cós em cima, as duas pernas abertas para baixo
+      g.moveTo(26, 4); g.lineTo(102, 4); g.lineTo(110, 50); g.lineTo(116, 124); g.lineTo(76, 124); g.lineTo(64, 52);
+      g.lineTo(52, 124); g.lineTo(12, 122); g.lineTo(18, 50);
+    }
+    g.closePath(); g.fill();
+    g.globalCompositeOperation = 'source-atop';
+    for (let i = 0; i < 900; i++) { g.fillStyle = r() < 0.5 ? css(1.25) : css(0.7); g.globalAlpha = 0.25; g.fillRect(r() * 128, r() * 128, 1 + r() * 2, 1); }
+    g.globalAlpha = 1; g.lineWidth = 2;
+    if (kind === 'camiseta') {
+      g.strokeStyle = css(0.6); g.beginPath(); g.moveTo(44, 12); g.quadraticCurveTo(64, 30, 86, 12); g.stroke();
+      g.strokeStyle = css(1.4); g.lineWidth = 1; g.beginPath(); g.moveTo(52, 70); g.lineTo(78, 64); g.lineTo(82, 84); g.lineTo(56, 90); g.closePath(); g.stroke();
+    } else {
+      g.strokeStyle = css(0.6); g.beginPath(); g.moveTo(24, 14); g.lineTo(104, 14); g.moveTo(64, 14); g.lineTo(64, 48); g.stroke();
+      g.strokeStyle = '#a8742c'; g.lineWidth = 1; g.setLineDash([3, 2]);
+      g.beginPath(); g.moveTo(30, 18); g.quadraticCurveTo(36, 34, 50, 32); g.moveTo(98, 18); g.quadraticCurveTo(92, 34, 78, 32); g.stroke();
+    }
+    const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+    const geo = new THREE.PlaneGeometry(w, d, 12, 12); geo.rotateX(-Math.PI / 2);
+    const p = geo.attributes.position, waves = [0, 1, 2].map(() => [8 + r() * 14, 8 + r() * 14, r() * 6.3]);
+    for (let i = 0; i < p.count; i++) {
+      const x = p.getX(i), z = p.getZ(i), nx = x / (w / 2), nz = z / (d / 2);
+      const edge = Math.max(0, 1 - Math.max(Math.abs(nx), Math.abs(nz)) ** 3);
+      let y = 0; for (const [a, b, ph] of waves) y += Math.sin(x * a + z * b + ph);
+      p.setY(i, h * Math.sqrt(edge) * (0.5 + 0.16 * y));
+    }
+    geo.computeVertexNormals();
+    const m = new THREE.Mesh(geo, lam({ map: tex, alphaTest: 0.5, side: THREE.DoubleSide }));
+    m.castShadow = m.receiveShadow = true;
+    return m;
+  }
+
+  // Cama ocupada: com o Caio deitado, o cobertor liso dá lugar a um moldado pelo corpo
+  // e as roupas vão para o chão. Roda todo quadro (e nas fotos, que posam o personagem na hora).
+  syncBed(player) {
+    const on = player.state === 'bed' && player.root.visible;
+    if (on === !!this.cover) return;
+    if (on) this.tuck(player);
+    else {
+      for (const m of this.cover.children) { m.geometry.dispose(); }
+      this.bed.remove(this.cover); this.cover = null;
+    }
+    this.blanket.visible = !on;
+    for (const c of this.clothes.children) { const s = c.userData[on ? 'floor' : 'bed']; c.position.set(s[0], s[1], s[2]); c.rotation.y = s[3]; }
+  }
+
+  tuck(player) {
+    const X0 = -1.53, HW = 0.44, ZF = 1.08, Y0 = 0.478;   // centro da cama, meia largura e pé do colchão, cobertor sobre o colchão
+    const B = player.ch.bones, v = new THREE.Vector3();
+    player.root.updateMatrixWorld(true);
+    const neck = B.neck.getWorldPosition(new THREE.Vector3()), chest = B.chest.getWorldPosition(new THREE.Vector3());
+    const Z0 = neck.z + 0.08;                                // borda de cima: na linha do ombro
+    const NX = 22, NZ = 36, W = NX + 1, dx = 2 * HW / NX, dz = (ZF - Z0) / NZ;
+    // altura do corpo sobre cada ponto da grade, a partir dos vértices já deformados pelo esqueleto
+    const raw = new Float32Array(W * (NZ + 1)).fill(Y0);
+    player.ch.root.traverse((o) => {
+      if (!o.isMesh || !o.visible || o.parent === B.head) return;    // cabelo e óculos ficam para fora
+      const pa = o.geometry.attributes.position, si = o.geometry.attributes.skinIndex;
+      const bones = o.isSkinnedMesh ? o.skeleton.bones : null;
+      for (let i = 0; i < pa.count; i++) {
+        if (bones && bones[si.getX(i)] === B.head) continue;
+        if (bones) o.getVertexPosition(i, v); else v.fromBufferAttribute(pa, i);
+        v.applyMatrix4(o.matrixWorld);
+        // cada vértice marca a célula e as vizinhas (a malha do corpo é esparsa)
+        const a0 = Math.round((v.x - X0 + HW) / dx), b0 = Math.round((v.z - Z0) / dz);
+        for (let b = b0 - 1; b <= b0 + 1; b++) for (let a = a0 - 1; a <= a0 + 1; a++) {
+          if (a < 0 || a > NX || b < -1 || b > NZ) continue;
+          const k = Math.max(0, b) * W + a;
+          if (v.y + 0.03 > raw[k]) raw[k] = v.y + 0.03;
+        }
+      }
+    });
+    // o pano não entra nos vãos: cai do alto do corpo com inclinação limitada, depois suaviza
+    const hf = new Float32Array(raw.length), SL = 1.1, RC = 8;
+    for (let j = 0; j <= NZ; j++) for (let i = 0; i <= NX; i++) {
+      let m = raw[j * W + i];
+      for (let b = Math.max(0, j - RC); b <= Math.min(NZ, j + RC); b++) {
+        for (let a = Math.max(0, i - RC); a <= Math.min(NX, i + RC); a++) {
+          const h = raw[b * W + a] - SL * Math.hypot((a - i) * dx, (b - j) * dz);
+          if (h > m) m = h;
+        }
+      }
+      hf[j * W + i] = m;
+    }
+    const tmp = new Float32Array(hf.length);
+    for (let pass = 0; pass < 4; pass++) {
+      for (let j = 0; j <= NZ; j++) for (let i = 0; i <= NX; i++) {
+        let sum = 0, n = 0;
+        for (let b = Math.max(0, j - 1); b <= Math.min(NZ, j + 1); b++) for (let a = Math.max(0, i - 1); a <= Math.min(NX, i + 1); a++) { sum += hf[b * W + a]; n++; }
+        tmp[j * W + i] = Math.max(sum / n, raw[j * W + i] - 0.012);
+      }
+      hf.set(tmp);
+    }
+    const hAt = (i, j) => hf[j * W + i] + 0.006 * Math.sin(i * 1.9 + j * 0.7) * Math.sin(j * 1.3 - i * 0.4);
+    // malha: grade em cima do colchão + barra caída nas laterais e no pé
+    const xs = [], cols = [];
+    xs.push(-1.995, -1.987); cols.push(-1, -2);                       // lado da parede: quase encostado
+    for (let i = 0; i <= NX; i++) { xs.push(X0 - HW + i * dx); cols.push(i); }
+    xs.push(X0 + HW + 0.035, X0 + HW + 0.055); cols.push(-2, -1);
+    const rows = [];
+    for (let j = 0; j <= NZ; j++) rows.push([Z0 + j * dz, j]);
+    rows.push([ZF + 0.012, -2], [ZF + 0.022, -1]);
+    const height = (ci, rj) => {
+      const i = cols[ci] < 0 ? (ci < 2 ? 0 : NX) : cols[ci], j = rj[1] < 0 ? NZ : rj[1];
+      let y = hAt(i, j);
+      if (cols[ci] === -2 || rj[1] === -2) y -= 0.025;
+      if (cols[ci] === -1 || rj[1] === -1) y = 0.31;
+      return y;
+    };
+    // colunas c0..c1-1 e as primeiras nRows linhas da grade, erguidas em `lift`
+    const build = (nRows, lift, uScale, vScale, c0 = 0, c1 = xs.length) => {
+      const cx = xs.slice(c0, c1), NC = cx.length, pos = [], uv = [], idx = [];
+      const ys = rows.slice(0, nRows).map((rj) => cx.map((_, ci) => height(ci + c0, rj) + lift));
+      // UV pelo comprimento do pano (não estica nas encostas)
+      const us = ys.map((row) => { let u = 0; return row.map((y, ci) => (ci ? (u += Math.hypot(cx[ci] - cx[ci - 1], y - row[ci - 1])) : 0)); });
+      const vs = cx.map((_, ci) => { let t = 0; return ys.map((row, r) => (r ? (t += Math.hypot(rows[r][0] - rows[r - 1][0], row[ci] - ys[r - 1][ci])) : 0)); });
+      for (let r = 0; r < nRows; r++) for (let ci = 0; ci < NC; ci++) {
+        pos.push(cx[ci], ys[r][ci], rows[r][0]); uv.push(us[r][ci] * uScale, vs[ci][r] * vScale);
+      }
+      for (let r = 0; r < nRows - 1; r++) for (let ci = 0; ci < NC - 1; ci++) {
+        const a = r * NC + ci, b = a + 1, c2 = a + NC, d = c2 + 1;
+        idx.push(a, c2, b, b, c2, d);
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+      geo.setIndex(idx); geo.computeVertexNormals();
+      return geo;
+    };
+    this.cover = new THREE.Group(); this.bed.add(this.cover);
+    this.add(new THREE.Mesh(build(rows.length, 0, 2, 1.8), this.blanketMat), this.cover);
+    // dobra do lençol virada por cima do cobertor, na borda de cima (só até a beira do colchão)
+    this.add(new THREE.Mesh(build(4, 0.008, 1.5, 1.5, 1, xs.length - 1), this.sheetMat), this.cover);
+    // respiração: o pano sobe e desce sobre o peito
+    this.coverBreath = this.cover.children.map((m) => {
+      const pa = m.geometry.attributes.position, base = Float32Array.from(pa.array), wgt = new Float32Array(pa.count);
+      for (let i = 0; i < pa.count; i++) {
+        const lift = Math.min(1, Math.max(0, (base[i * 3 + 1] - Y0) / 0.25)), dzc = (base[i * 3 + 2] - chest.z) / 0.32;
+        wgt[i] = lift * Math.exp(-dzc * dzc);
+      }
+      return { pa, base, wgt };
+    });
   }
 
   buildFurniture(R) {
@@ -1241,6 +1401,14 @@ export class World {
 
   // ======================================================================== quadro a quadro
   update(dt, os, player) {
+    this.syncBed(player);
+    if (this.cover) {
+      const k = (player.pose.breath || 0) * 0.28;
+      for (const { pa, base, wgt } of this.coverBreath) {
+        for (let i = 0; i < pa.count; i++) pa.array[i * 3 + 1] = base[i * 3 + 1] + wgt[i] * k;
+        pa.needsUpdate = true;
+      }
+    }
     // chuva
     const pos = this.rain.geometry.attributes.position.array;
     for (let i = 0; i < this.rainData.length; i++) {
