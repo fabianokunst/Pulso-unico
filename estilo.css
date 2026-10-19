@@ -1,0 +1,157 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; background: #000; overflow: hidden; color: #ddd; font-family: Arial, Helvetica, sans-serif; }
+body.jogando, body.pc { cursor: none; }
+body.pausado, body.final { cursor: default; }
+
+#tela { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; image-rendering: auto; }
+
+/* faixa de varredura sobre a imagem inteira — reforça o "TV de tubo" */
+body::after {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 5;
+  background: repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0, rgba(0,0,0,0) 2px, rgba(0,0,0,0.12) 3px);
+  mix-blend-mode: multiply;
+}
+
+#fade { position: fixed; inset: 0; background: #000; opacity: 1; pointer-events: none; z-index: 10; }
+
+#legenda {
+  position: fixed; left: 50%; bottom: 7vh; transform: translateX(-50%); width: min(84vw, 1100px);
+  text-align: center; z-index: 20; opacity: 0; transition: opacity .25s;
+  font: bold clamp(15px, 2.5vh, 27px)/1.35 "Trebuchet MS", Arial, sans-serif; color: #f2f2ee;
+  text-shadow: 0 0 3px #000, 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+  pointer-events: none;
+}
+#legenda.show { opacity: 1; }
+#legenda.mae { color: #f1d98a; }
+#legenda.voz { color: #d84a3a; font-style: italic; letter-spacing: .08em; }
+#legenda b { font-weight: normal; opacity: .8; }
+
+#objetivo {
+  position: fixed; left: 3vw; top: 4vh; z-index: 20; opacity: 0; transition: opacity .5s;
+  font: clamp(12px, 1.8vh, 18px)/1.3 "Trebuchet MS", Arial, sans-serif; color: #d9d6c8;
+  text-shadow: 1px 1px 0 #000, 0 0 4px #000; pointer-events: none; max-width: 40vw;
+}
+#objetivo span { display: block; font-size: .7em; letter-spacing: .3em; color: #b04030; margin-bottom: .2em; }
+#objetivo.show { opacity: .9; }
+#objetivo.flash { animation: pisca 1.2s; }
+@keyframes pisca { 0%, 40%, 80% { opacity: 1; } 20%, 60% { opacity: .2; } }
+
+#prompt {
+  position: fixed; left: 50%; bottom: 17vh; transform: translateX(-50%); z-index: 20; opacity: 0; transition: opacity .2s;
+  font: clamp(12px, 1.9vh, 19px) "Trebuchet MS", Arial, sans-serif; color: #e8e4d4; text-shadow: 1px 1px 0 #000, 0 0 5px #000;
+  pointer-events: none;
+}
+#prompt.show { opacity: .85; }
+kbd {
+  display: inline-block; min-width: 1.6em; padding: .05em .4em; margin: 0 .15em; border: 1px solid #aaa; border-bottom-width: 3px;
+  border-radius: 4px; background: rgba(20,20,20,.7); font: bold .85em Arial, sans-serif; color: #eee; text-align: center; text-shadow: none;
+}
+
+#aviso {
+  position: fixed; right: 3vw; top: 4vh; z-index: 20; opacity: 0; transition: opacity .4s; text-align: right;
+  font: clamp(12px, 1.7vh, 17px) "Trebuchet MS", Arial, sans-serif; color: #ccc; text-shadow: 1px 1px 0 #000; pointer-events: none; max-width: 45vw;
+}
+#aviso.show { opacity: .9; }
+
+#cartao {
+  position: fixed; inset: 0; z-index: 30; display: none; flex-direction: column; justify-content: center; align-items: center; gap: .9em;
+  padding: 10vw; pointer-events: none; text-align: center;
+  font: clamp(15px, 2.4vh, 26px)/1.5 "Courier New", Courier, monospace; color: #c8c4b8;
+}
+#cartao.show { display: flex; }
+#cartao p { min-height: 1.4em; text-shadow: 0 0 6px rgba(200,190,170,.25); }
+#cartao.titulo p { color: #9a9488; }
+#cartao p.grande { font: bold clamp(30px, 6vh, 64px) Georgia, "Times New Roman", serif; color: #e8e0d0; letter-spacing: .2em; margin-bottom: .4em; }
+
+.tela { position: fixed; inset: 0; z-index: 40; display: none; }
+.tela.show { display: flex; }
+
+#carregando { background: #000; align-items: center; justify-content: center; }
+.mc { width: min(70vw, 520px); font: clamp(12px, 1.8vh, 16px) "Courier New", monospace; color: #9ab; }
+.mc .bar { margin-top: 1em; height: 6px; background: #112; border: 1px solid #335; }
+.mc .bar i { display: block; height: 100%; width: 0; background: #4a7ad8; transition: width .2s; }
+
+#inicio { align-items: center; justify-content: center; background: rgba(0,0,0,.85); cursor: pointer; }
+.inicio-box { text-align: center; font-family: "Courier New", monospace; }
+.aviso-fone { color: #9a9488; font-size: clamp(14px, 2.2vh, 22px); margin-bottom: 3em; }
+.press { color: #ddd; font-size: clamp(13px, 2vh, 20px); animation: respira 2.4s infinite; }
+@keyframes respira { 50% { opacity: .25; } }
+
+#titulo { flex-direction: column; justify-content: space-between; padding: 8vh 6vw 5vh; background: radial-gradient(ellipse at 70% 40%, rgba(0,0,0,0) 30%, rgba(0,0,0,.75) 100%); }
+.logo h1 {
+  position: relative; font: bold clamp(40px, 10vh, 120px)/1 Georgia, "Times New Roman", serif; letter-spacing: .12em; color: #ece6d8;
+  text-shadow: 0 0 18px rgba(255,255,255,.15);
+}
+.logo h1::before, .logo h1::after { content: attr(data-t); position: absolute; left: 0; top: 0; opacity: .6; }
+.logo h1::before { color: #c02020; transform: translate(3px, 0); clip-path: inset(0 0 60% 0); animation: glitch 4s infinite steps(1); }
+.logo h1::after { color: #2080c0; transform: translate(-3px, 0); clip-path: inset(55% 0 0 0); animation: glitch 5.3s infinite steps(1) reverse; }
+@keyframes glitch { 0%, 88%, 100% { transform: translate(0, 0); opacity: 0; } 90% { transform: translate(6px, -2px); opacity: .7; } 94% { transform: translate(-5px, 1px); opacity: .6; } }
+.logo .sub { margin-top: 1.2em; font: clamp(13px, 2vh, 20px) "Courier New", monospace; color: #9a9488; letter-spacing: .25em; }
+
+.menu { display: flex; flex-direction: column; align-items: flex-start; gap: .5em; }
+.menu button, .pausa-box button {
+  background: none; border: none; cursor: pointer; padding: .2em .1em; text-align: left;
+  font: bold clamp(16px, 2.6vh, 28px) "Trebuchet MS", Arial, sans-serif; letter-spacing: .15em; color: #8f8a80;
+  text-shadow: 1px 1px 0 #000;
+}
+.menu button:hover, .menu button:focus, .pausa-box button:hover, .pausa-box button:focus { color: #f0ece0; outline: none; }
+.menu button:hover::before, .pausa-box button:hover::before { content: '▸ '; color: #c03020; }
+
+.ajuda { display: flex; flex-wrap: wrap; gap: .6em 1.6em; font: clamp(11px, 1.6vh, 15px) "Trebuchet MS", Arial, sans-serif; color: #8a867c; }
+
+#pausa { align-items: center; justify-content: center; background: rgba(0,0,0,.7); z-index: 50; }
+.pausa-box { display: flex; flex-direction: column; gap: .5em; align-items: flex-start; }
+.pausa-box h2 { font: bold clamp(26px, 5vh, 52px) Georgia, serif; letter-spacing: .3em; color: #ddd; margin-bottom: .5em; }
+
+/* diálogo final, estilo Windows 98, sobre a imagem do jogo */
+#dialogo { position: fixed; inset: 0; z-index: 35; display: none; align-items: center; justify-content: center; }
+#dialogo.show { display: flex; }
+.win98 {
+  width: min(92vw, 470px); background: #c0c0c0; color: #000; font: 13px Tahoma, Verdana, "MS Sans Serif", Arial, sans-serif;
+  border: 2px solid; border-color: #fff #000 #000 #fff; box-shadow: inset -1px -1px #808080, inset 1px 1px #dfdfdf, 0 0 40px rgba(0,0,0,.8);
+  animation: surge .25s steps(3);
+}
+@keyframes surge { from { transform: scale(.6); opacity: 0; } }
+.win98 .tb { background: linear-gradient(90deg, #000080, #1084d0); color: #fff; font-weight: bold; padding: 4px 6px; }
+.win98 .bd { display: flex; gap: 14px; padding: 16px 16px 8px; }
+.win98 .bd p { margin-bottom: .55em; line-height: 1.35; }
+.win98 .ic { flex: 0 0 34px; height: 34px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #8bf, #13d 60%, #037); }
+.win98 .bt { display: flex; justify-content: center; gap: 10px; padding: 8px 16px 14px; flex-wrap: wrap; }
+.win98 button {
+  min-width: 140px; padding: 5px 12px; font: 13px Tahoma, Verdana, Arial, sans-serif; background: #c0c0c0; cursor: pointer;
+  border: 2px solid; border-color: #fff #000 #000 #fff; box-shadow: inset -1px -1px #808080, inset 1px 1px #dfdfdf;
+}
+.win98 button:active { border-color: #000 #fff #fff #000; box-shadow: inset 1px 1px #808080; }
+.win98 button:focus { outline: 1px dotted #000; outline-offset: -5px; }
+
+/* folha do caderno do Léo */
+#folha { position: fixed; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,.78); cursor: pointer; }
+#folha.show { display: flex; }
+.papel {
+  position: relative; width: min(86vw, 460px); padding: 34px 30px 26px 52px; transform: rotate(-1.2deg);
+  background: repeating-linear-gradient(to bottom, #efe9d8 0, #efe9d8 27px, #9ab4cf 28px), #efe9d8;
+  box-shadow: 0 10px 40px rgba(0,0,0,.8), inset 0 0 60px rgba(120,90,40,.25);
+  font: 19px/28px "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive; color: #1d2340;
+  animation: surgePapel .35s ease-out;
+}
+.papel::before { content: ''; position: absolute; left: 36px; top: 0; bottom: 0; width: 2px; background: rgba(200,60,60,.55); }
+.papel p { white-space: pre-wrap; }
+.papel .num { position: absolute; right: 18px; top: 8px; font-size: 13px; color: #7a6a50; }
+.papel small { display: block; margin-top: 18px; font: 12px "Trebuchet MS", Arial, sans-serif; color: #7a6a50; text-align: right; }
+@keyframes surgePapel { from { transform: rotate(-6deg) translateY(30px); opacity: 0; } }
+.lcd { padding: 18px 18px 12px; background: linear-gradient(#5a5d63, #3a3c40); border-radius: 14px; box-shadow: 0 10px 40px rgba(0,0,0,.8); animation: surgePapel .3s ease-out; }
+.lcd .lcd-tela { background: #000; padding: 6px; border-radius: 4px; }
+.lcd canvas { display: block; width: min(78vw, 512px); height: auto; image-rendering: auto; }
+.lcd .leg { margin-top: 8px; font: 13px "Courier New", monospace; color: #c8d0d8; }
+.lcd small { display: block; margin-top: 6px; font: 11px "Trebuchet MS", Arial, sans-serif; color: #9aa0a8; text-align: right; }
+.caderno { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.caderno-lista { max-height: 78vh; overflow-y: auto; display: flex; flex-direction: column; gap: 22px; padding: 14px 18px; }
+.caderno > small { font: 12px "Trebuchet MS", Arial, sans-serif; color: #b8b0a0; }
+/* a dica de fechar só aparece depois de um instante (o painel ignora teclas nesse tempo) */
+.papel small, .lcd small, .caderno > small { opacity: 0; animation: aparece .3s .9s forwards; }
+@keyframes aparece { to { opacity: 1; } }
+
+@media (max-width: 700px) {
+  #objetivo { max-width: 70vw; }
+  .ajuda { display: none; }
+}

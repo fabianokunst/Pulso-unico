@@ -1,0 +1,13 @@
+{
+  "_tamanhoMax": 256,
+  "parede": "parede.png",
+  "parede_corredor": "parede_corredor.png",
+  "teto": "teto.png",
+  "piso": "piso.png",
+  "piso_corredor": "piso_corredor.png",
+  "madeira": "madeira.png",
+  "muro": "muro.png",
+  "mancha_teto": "mancha_teto.png",
+  "mancha_parede": "mancha_parede.png",
+  "mancha_corredor": "mancha_corredor.png"
+}

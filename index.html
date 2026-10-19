@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pulso Único</title>
+<meta name="description" content="Terror psicológico em 3D. Julho de 2004: depois da meia-noite, a internet discada é pulso único.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="estilo.css">
+<script type="importmap">{ "imports": { "three": "./lib/three.module.js" } }</script>
+</head>
+<body>
+<canvas id="tela"></canvas>
+
+<div id="fade"></div>
+<div id="objetivo"></div>
+<div id="aviso"></div>
+<div id="prompt"></div>
+<div id="legenda"></div>
+<div id="cartao"></div>
+<div id="dialogo"></div>
+<div id="folha"></div>
+
+<div id="carregando" class="tela show">
+  <div class="mc">
+    <p>Conectando...</p>
+    <div class="bar"><i id="barra"></i></div>
+  </div>
+</div>
+
+<div id="inicio" class="tela">
+  <div class="inicio-box">
+    <p class="aviso-fone">Use fones de ouvido. Jogue no escuro.</p>
+    <p class="press">clique ou pressione qualquer tecla</p>
+  </div>
+</div>
+
+<div id="titulo" class="tela">
+  <div class="logo">
+    <h1 data-t="PULSO ÚNICO">PULSO ÚNICO</h1>
+    <p class="sub">julho de 2004 · depois da meia-noite</p>
+  </div>
+  <nav class="menu">
+    <button id="mNovo">NOVO JOGO</button>
+    <button id="mContinuar" style="display:none">CONTINUAR</button>
+    <button id="mBrilho" class="brilho">BRILHO</button>
+    <button id="mTela">TELA CHEIA</button>
+  </nav>
+  <div class="ajuda">
+    <span><kbd>WASD</kbd> andar</span><span><kbd>Shift</kbd> correr</span><span><kbd>E</kbd> interagir</span>
+    <span><kbd>Mouse</kbd> usar o computador</span><span><kbd>Esc</kbd> levantar / pausar</span><span>Controle de videogame funciona</span>
+  </div>
+</div>
+
+<div id="pausa" class="tela">
+  <div class="pausa-box">
+    <h2>PAUSA</h2>
+    <button id="pContinuar">CONTINUAR</button>
+    <button id="pCaderno">CADERNO DO LÉO</button>
+    <button id="pBrilho" class="brilho">BRILHO</button>
+    <button id="pTela">TELA CHEIA</button>
+    <button id="pTitulo">VOLTAR AO TÍTULO</button>
+  </div>
+</div>
+
+<noscript>Este jogo precisa de JavaScript.</noscript>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
