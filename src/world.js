@@ -145,16 +145,17 @@ export class World {
     this.item('cama', -1.5, 0.5, 0.3, 0.85, 'Cama');
     this.item('janela', 0.8, 1.3, -1.6, 0.95, 'Janela');
     this.item('guardaroupa', 1.4, 1.0, -0.2, 0.75, 'Guarda-roupa');
-    this.item('poster', -1.95, 1.55, 0.2, 1.25, 'Pôster');
+    // centrado na ponta do pôster onde a folha aparece: alcança tanto do lado da cama quanto do pé dela
+    this.item('poster', -1.95, 1.55, 0.42, 1.25, 'Pôster');
     this.item('calendario', -1.3, 1.5, -1.74, 0.75, 'Calendário');
     this.item('mural', -0.6, 1.45, -1.74, 0.7, 'Mural de fotos');
     this.item('cds', -0.1, 0.6, -1.55, 0.7, 'Torre de CDs');
     this.item('cds_chao', 0.05, 0.05, -1.05, 0.75, 'CDs no chão');
     this.item('telefone', 0.2, 0.1, -1.5, 0.7, 'Telefone');
     this.item('porta', 0.8, 1.0, 1.7, 0.75, 'Porta');
-    this.item('violao', -0.45, 0.6, 1.6, 0.7, 'Violão');
+    this.item('violao', -0.28, 0.6, 1.6, 0.7, 'Violão');
     this.item('canto', 1.75, 1.2, 1.5, 0.7, 'Canto do quarto');
-    this.item('mochila', -0.95, 0.2, 1.45, 0.65, 'Mochila');
+    this.item('mochila', 0.11, 0.2, 1.45, 0.65, 'Mochila');
     this.item('estante', 1.78, 0.8, -1.55, 0.7, 'Estante');
     this.item('poster2', -1.0, 1.55, 1.74, 0.8, 'Pôster');
     this.item('cadeira', -1.0, 0.6, -0.65, 0.8, 'Cadeira');
@@ -194,7 +195,9 @@ export class World {
       { r: [1.4, -0.92, 2.0, 0.52], on: true },                    // guarda-roupa
       { r: [1.55, -1.75, 2.0, -1.33], on: true },                  // estante
       { r: [-0.2, -1.75, 0.0, -1.48], on: true },                  // torre de CDs
-      { r: [-0.62, 1.43, -0.3, 1.75], on: true },                  // violão
+      // o pé da cama precisa ficar livre até a parede oeste (é dali que se alcança a folha atrás do pôster):
+      // entre a quina da cama e o violão sobra vão para passar, e a mochila fica do lado da porta
+      { r: [-0.45, 1.43, -0.11, 1.75], on: true },                 // violão
       { r: [-0.5, 2.9, -0.1, 3.35], on: true, hall: true },        // mesinha do corredor
       { r: [-0.98, 4.1, -0.12, 6.1], on: true, sala: true },       // sofá
       { r: [-0.75, 3.55, -0.35, 3.95], on: true, sala: true },     // mesinha do telefone da sala
@@ -205,7 +208,7 @@ export class World {
       { r: [0.34, 7.7, 0.9, 8.3], on: true, sala: true },          // fogão
       { r: [1.3, 7.62, 2.1, 8.3], on: true, sala: true },          // geladeira
       { r: [-1.75, 6.45, -0.45, 7.35], on: true, sala: true },     // mesa e cadeiras
-      { r: [-1.14, 1.3, -0.76, 1.75], on: true, id: 'mochila' },   // mochila
+      { r: [-0.08, 1.3, 0.3, 1.75], on: true, id: 'mochila' },     // mochila
     ];
   }
 
@@ -654,7 +657,7 @@ export class World {
     rug.rotation.x = -Math.PI / 2; rug.position.set(0.25, 0.004, 0.3); rug.rotation.z = 0.05; this.add(rug, R, false, true);
     // encostado na parede sul (z 1.75): borda de trás do bojo no chão, costas da mão tocando a parede
     const gt = this.guitar = new THREE.Group(), gs = Math.sin(0.2), gc = Math.cos(0.2);
-    gt.rotation.x = 0.2; gt.position.set(-0.45, -(0.03 * gc - 0.05 * gs), 1.748 - (1.23 * gs + 0.015 * gc)); R.add(gt);
+    gt.rotation.x = 0.2; gt.position.set(-0.28, -(0.03 * gc - 0.05 * gs), 1.748 - (1.23 * gs + 0.015 * gc)); R.add(gt);
     const wood = lam({ color: 0xb06a2a });
     const b1 = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.1, 14), wood); b1.rotation.x = Math.PI / 2; b1.position.y = 0.22; this.add(b1, gt);
     const b2 = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.1, 14), wood); b2.rotation.x = Math.PI / 2; b2.position.y = 0.48; this.add(b2, gt);
@@ -695,13 +698,13 @@ export class World {
     this.hoodie.position.copy(ch.position);
   }
 
-  // mochila do cursinho largada no chão, tombada de costas contra a parede da porta.
+  // mochila do cursinho largada no chão ao lado do batente, tombada de costas contra a parede da porta.
   // Corpo e bolso são "caixas arredondadas" deformadas a partir de esferas; alças são fitas varridas ao longo de curvas.
   // Coordenadas locais: fundo em y = 0, frente para -z, costas (alças) para +z.
   buildBackpack(R) {
     const M = this.mats, X = V(1, 0, 0), Y = V(0, 1, 0), Z = V(0, 0, 1);
     const bp = this.backpack = new THREE.Group();
-    bp.position.set(-0.95, 0.012, 1.52); bp.rotation.set(0.14, -0.32, 0.02, 'YXZ'); R.add(bp);
+    bp.position.set(0.11, 0.012, 1.52); bp.rotation.set(0.14, -0.32, 0.02, 'YXZ'); R.add(bp);
     const fabric = lam({ map: T.mochila, vertexColors: true });
     const pocketM = lam({ map: T.mochila, color: 0xc8cad8 });
     const strapM = lam({ map: T.mochila, color: 0xe0e0e8 });
