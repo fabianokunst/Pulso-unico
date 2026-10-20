@@ -107,7 +107,6 @@ function screenPoint(e) {
 }
 canvas.addEventListener('mousemove', (e) => { if (G.mode === 'pc' && !G.paused) screenPoint(e); });
 canvas.addEventListener('mousedown', (e) => {
-  if (G.mode === 'boot') { start(); return; }
   if (G.mode === 'pc' && !G.paused) {
     if (e.button === 2) { story.exitPC(); return; }
     screenPoint(e); os.down = true; os.click();
@@ -172,6 +171,8 @@ function newGame(n) {
   audio.silenceAll(1);
   ui.fade(1, 1).then(() => story.run(n));
 }
+// a tela de início fica por cima do canvas, então é ela que recebe o clique
+$('inicio').onclick = () => start();
 $('mNovo').onclick = () => newGame(0);
 $('mContinuar').onclick = () => newGame(saved ?? 0);
 $('mTela').onclick = () => toggleFullscreen();
