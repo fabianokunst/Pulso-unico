@@ -328,12 +328,36 @@ export class World {
     this.ledMon = new THREE.MeshBasicMaterial({ color: 0x113311 });
     this.box(0.012, 0.008, 0.005, this.ledMon, 0.15, 0.08, 0.196, mon);
     this.box(0.08, 0.012, 0.004, M.cinza, 0, 0.083, 0.196, mon);
-    // post-it no monitor
-    const pc = document.createElement('canvas'); pc.width = 64; pc.height = 64; const pg = pc.getContext('2d');
-    pg.fillStyle = '#f2e96a'; pg.fillRect(0, 0, 64, 64); pg.fillStyle = '#123'; pg.font = 'bold 9px "Comic Sans MS", Arial';
-    pg.fillText('linhalivre', 5, 16); pg.fillText('caio_m', 5, 30); pg.fillText('NÃO esquecer', 5, 46); pg.fillText('de desligar!', 5, 58);
-    const post = new THREE.Mesh(new THREE.PlaneGeometry(0.055, 0.055), lam({ map: new THREE.CanvasTexture(pc) }));
-    post.position.set(-0.155, 0.37, 0.197); post.rotation.z = 0.12; mon.add(post);
+    // post-it colado na borda esquerda, ao lado do vidro: fica inteiro na vista do computador
+    // sem cobrir nada da tela (sai um pouco para fora do monitor, como post-it de verdade)
+    const ptex = makeTex(GEN.postit(), false);
+    const PS = 0.064, PX = -0.1825, PY = 0.305, PR = 0.035;          // 6,4 cm, quadrado, meio torto
+    const pgeo = new THREE.PlaneGeometry(PS, PS, 8, 10);
+    pgeo.rotateZ(PR); pgeo.translate(PX, PY, 0);
+    const pp = pgeo.attributes.position, puv = pgeo.attributes.uv;
+    for (let i = 0; i < pp.count; i++) {
+      const u = puv.getX(i), v = puv.getY(i);
+      // só a faixa de cola fica rente; abaixo dela o papel abre para fora, mais na ponta que está no ar
+      const t = Math.max(0, (0.8 - v) / 0.8);
+      pp.setZ(i, 0.1962 + 0.0068 * t ** 1.7 * (0.8 + 0.4 * (1 - u)) + 0.0007 * (2 * u - 1) ** 2 * t);
+    }
+    pgeo.computeVertexNormals();
+    // a luz do CRT ligado também bate no papel (emissive = cor média da tela)
+    // albedo abaixo de 1: a luminária fica a um palmo e estouraria o amarelo para limão claro
+    this.postitMat = lam({ map: ptex, color: 0x9c9c9c, emissiveMap: ptex, emissive: 0x000000 });
+    mon.add(new THREE.Mesh(pgeo, this.postitMat));
+    // sombra no plástico, só na moldura (a parte que sobra para fora do monitor não tem onde projetar):
+    // rente sob a cola, mais deslocada e difusa embaixo, onde o papel descolou
+    const SX = -0.185, SY = PY + 0.05, SW = -0.1485 - SX, SH = 0.1;
+    const shc = document.createElement('canvas'); shc.width = 64; shc.height = 176;
+    const shg = shc.getContext('2d'), tx = (x) => (x - SX) / SW * 64, ty = (y) => (SY - y) / SH * 176;
+    const corner = (a, b, dx, dy) => [PX + (a * Math.cos(PR) - b * Math.sin(PR)) * PS / 2 + dx, PY + (a * Math.sin(PR) + b * Math.cos(PR)) * PS / 2 + dy];
+    shg.shadowColor = 'rgba(0,0,0,0.78)'; shg.shadowBlur = 8; shg.shadowOffsetX = 500; shg.fillStyle = '#000';
+    shg.beginPath();
+    for (const [x, y] of [corner(-1, 1, 0.0004, -0.0006), corner(1, 1, 0.0004, -0.0006), corner(1, -1, 0.0018, -0.0058), corner(-1, -1, 0.0018, -0.0058)]) shg.lineTo(tx(x) - 500, ty(y));
+    shg.fill();
+    const shadow = new THREE.Mesh(new THREE.PlaneGeometry(SW, SH), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(shc), transparent: true, depthWrite: false }));
+    shadow.position.set(SX + SW / 2, SY - SH / 2, 0.1953); mon.add(shadow);
     // webcam bolinha em cima do monitor
     const cam = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 8), M.branco); cam.position.set(0.02, 0.44, 0.13); this.add(cam, mon);
     const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.01, 10), M.preto); lens.rotation.x = Math.PI / 2; lens.position.set(0.02, 0.44, 0.16); mon.add(lens);
@@ -1492,6 +1516,7 @@ export class World {
     this.crt.intensity = pcOn ? 5.5 : 0;
     this.crtGlow.material.color.copy(os.light).multiplyScalar(0.9);
     this.crtGlow.material.opacity = pcOn ? 0.6 : 0;
+    this.postitMat.emissive.copy(os.light).multiplyScalar(0.3);
     this.ledGlow.material.opacity = pcOn ? 0.8 : 0;
     this.ledPow.color.set(pcOn ? 0x33ff44 : 0x0a1a0a);
     this.ledMon.color.set(pcOn ? 0x33ff44 : (this.power ? 0xffaa00 : 0x111111));

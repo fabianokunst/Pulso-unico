@@ -383,6 +383,66 @@ const GEN = {
     grain(c, 10, 231);
     return c;
   },
+  postit() {
+    // post-it colado no monitor (não entra em TEX_INFO: o texto faz parte da história)
+    // quadrado, amarelo-canário, escrito à mão com caneta esferográfica azul
+    const S = 256, c = mk(S, S), g = c.getContext('2d'), r = rng(241);
+    const pap = g.createLinearGradient(0, 0, 0, S);
+    pap.addColorStop(0, '#ffeb73'); pap.addColorStop(0.3, '#fee464'); pap.addColorStop(1, '#f6d850');
+    g.fillStyle = pap; g.fillRect(0, 0, S, S);
+    // faixa de cola lisa no alto; logo abaixo o papel dobra e descola (a parte de baixo pega menos luz)
+    g.fillStyle = 'rgba(255,252,215,0.14)'; g.fillRect(0, 0, S, 42);
+    const fold = g.createLinearGradient(0, 38, 0, S);
+    fold.addColorStop(0, 'rgba(255,250,210,0.18)'); fold.addColorStop(0.06, 'rgba(140,95,0,0.07)');
+    fold.addColorStop(0.5, 'rgba(140,95,0,0.03)'); fold.addColorStop(1, 'rgba(140,95,0,0.16)');
+    g.fillStyle = fold; g.fillRect(0, 38, S, S - 38);
+    for (let i = 0; i < 1500; i++) { g.fillStyle = `rgba(${r() < 0.5 ? '255,251,215' : '160,118,15'},${0.03 + r() * 0.06})`; g.fillRect(r() * S, r() * S, 1 + r() * 3, 1); }
+    // borda cortada do bloco: fio mais escuro e um pouco irregular
+    g.strokeStyle = 'rgba(165,120,10,0.4)'; g.lineWidth = 2; g.strokeRect(1, 1, S - 2, S - 2);
+    // letra de mão: cada letra com tamanho, inclinação e linha de base um pouco diferentes;
+    // a esferográfica falha e engrossa (segunda passada deslocada, tinta mais fraca)
+    const hand = '"Ink Free", "Segoe Print", "Bradley Hand", "Comic Sans MS", "Comic Neue", cursive';
+    const ink = (a) => `rgba(24,44,165,${a})`;
+    g.textBaseline = 'alphabetic'; g.lineCap = 'round'; g.lineJoin = 'round';
+    const write = (s, x, y, px, rot, maxW = S - x - 14) => {
+      g.save(); g.translate(x, y); g.rotate(rot);
+      g.font = `${px}px ${hand}`;
+      const fit = Math.min(1, maxW / g.measureText(s).width); g.scale(fit, 1);
+      let cx = 0;
+      for (const ch of s) {
+        const k = 0.92 + r() * 0.16;
+        g.font = `${Math.round(px * k)}px ${hand}`;
+        g.save(); g.translate(cx, (r() - 0.5) * px * 0.08); g.rotate((r() - 0.5) * 0.12);
+        g.fillStyle = g.strokeStyle = ink(0.82 + r() * 0.18); g.lineWidth = px * 0.045;
+        g.strokeText(ch, 0, 0); g.fillText(ch, 0, 0);
+        g.fillStyle = ink(0.3 + r() * 0.2); g.fillText(ch, 0.8, 0.5);
+        g.restore();
+        cx += g.measureText(ch).width * (0.98 + r() * 0.06);
+      }
+      g.restore();
+      return cx * fit;
+    };
+    // traço de caneta tremido
+    const stroke = (pts, w) => {
+      g.strokeStyle = ink(0.85); g.lineWidth = w; g.beginPath(); g.moveTo(pts[0][0], pts[0][1]);
+      for (let i = 1; i < pts.length; i++) g.lineTo(pts[i][0] + (r() - 0.5) * 1.2, pts[i][1] + (r() - 0.5) * 1.2);
+      g.stroke();
+    };
+    write('LinhaLivre', 16, 44, 38, -0.04);
+    write('login: caio_m', 20, 84, 32, -0.015);
+    const wv = []; for (let x = 24; x <= 200; x += 6) wv.push([x, 101 + Math.sin(x * 0.35) * 2.5]);
+    stroke(wv, 2);
+    const wn = write('NÃO', 22, 154, 66, -0.06);
+    // NÃO sublinhado duas vezes, rápido, passando do fim da palavra
+    for (const [dy, ex] of [[10, 10], [18, 4]]) {
+      const pts = []; for (let t = 0; t <= 1.0001; t += 0.1) pts.push([18 + t * (wn + ex), 154 + dy - t * (wn + ex) * 0.06 + Math.sin(t * Math.PI) * 2]);
+      stroke(pts, 3);
+    }
+    write('esquecer', 30, 206, 48, -0.02);
+    write('de desligar!', 14, 244, 40, -0.035);
+    grain(c, 7, 242);
+    return c;
+  },
   mancha_teto() {
     const c = mk(128, 128), g = c.getContext('2d'), r = rng(301);
     for (let i = 0; i < 3; i++) {

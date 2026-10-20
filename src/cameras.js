@@ -9,7 +9,8 @@ export const CAM_DEFS = {
   canto: { pos: V(1.8, 2.42, 1.6), track: true, fov: 56 },
   noroeste: { pos: V(-0.2, 2.38, -1.52), track: true, fov: 62 },
   mesa: { pos: V(-0.45, 1.45, -0.15), look: V(-0.98, 0.95, -1.35), fov: 50 },
-  pc: { pos: V(-0.95, 0.998, -0.935), look: V(-0.95, 0.998, -1.3), fov: 40 },
+  // fitW: tangente da meia-largura que precisa caber (o post-it ao lado da tela), até maxFov
+  pc: { pos: V(-0.95, 0.998, -0.935), look: V(-0.95, 0.998, -1.3), fov: 40, fitW: 0.7, maxFov: 48 },
   cama: { pos: V(-0.4, 1.9, -1.2), look: V(-1.53, 0.55, -0.2), fov: 55 },
   corredor1: { pos: V(1.95, 2.3, 2.15), track: true, fov: 58 },
   corredor2: { pos: V(-1.4, 2.5, 2.65), track: true, fov: 52 },
@@ -81,7 +82,8 @@ export class Cams {
       if (this.cut) this.lookAt.copy(target); else this.lookAt.lerp(target, 1 - Math.exp(-dt * 3.5));
       look = this.lookAt;
     } else look = def.look;
-    const fov = def.fov || 55;
+    let fov = def.fov || 55;
+    if (def.fitW) fov = Math.min(def.maxFov, Math.max(fov, THREE.MathUtils.radToDeg(2 * Math.atan(def.fitW / this.cam.aspect))));
 
     // pose desejada
     const tmp = this._tmp || (this._tmp = new THREE.PerspectiveCamera());
