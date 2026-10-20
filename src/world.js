@@ -228,18 +228,23 @@ export class World {
     const bar = lam({ color: 0x1e1e1e });
     for (let i = 0; i < 8; i++) this.box(0.014, 1.12, 0.014, bar, 0.33 + i * 0.135, 1.525, -1.9, R);
     for (const y of [1.15, 1.6, 2.02]) this.box(1.08, 0.014, 0.014, bar, 0.8, y, -1.9, R);
-    // varão e cortinas
-    this.box(1.5, 0.02, 0.02, lam({ color: 0x777777 }), 0.8, 2.2, -1.68, R);
+    // varão (com suportes na parede) e cortinas
+    const rodMat = lam({ color: 0x777777 });
+    this.box(1.5, 0.02, 0.02, rodMat, 0.8, 2.2, -1.68, R);
+    for (const x of [0.12, 1.48]) this.box(0.02, 0.03, 0.07, rodMat, x, 2.2, -1.715, R);
     const curtMat = lam({ map: T.cortina, side: THREE.DoubleSide });
+    // cortina curta: a barra fica logo acima do peitoril (topo em y 0.965, saindo até z -1.6),
+    // em vez de atravessá-lo; a da direita termina antes da estante (x 1.58)
     const curt = (cx, w) => {
-      const g = new THREE.PlaneGeometry(w, 1.42, 14, 1);
+      const top = 2.19, bottom = 0.975;
+      const g = new THREE.PlaneGeometry(w, top - bottom, 14, 1);
       const p = g.attributes.position;
       for (let i = 0; i < p.count; i++) p.setZ(i, Math.sin(p.getX(i) * 40) * 0.025);
       g.computeVertexNormals();
-      const m = new THREE.Mesh(g, curtMat); m.position.set(cx, 1.48, -1.67);
+      const m = new THREE.Mesh(g, curtMat); m.position.set(cx, (top + bottom) / 2, -1.67);
       return this.add(m, R, true, true);
     };
-    this.curtL = curt(0.2, 0.42); this.curtR = curt(1.42, 0.36);
+    this.curtL = curt(0.2, 0.42); this.curtR = curt(1.4, 0.33);
   }
 
   buildExterior() {
